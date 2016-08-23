@@ -56,17 +56,23 @@ End Class", @"class TestClass
 }");
 		}
 
-		// Mulitple variable declaration
-		// TODO: Module convert, Namespace, attribute on class, attribute in file
-		// Generic classes, with constraints
-		// base classes, interface implementation
-		// TODO: static local variables to Lazy<t>
-		// TODO. Shadows
-		// TODO: extension methods -> correct placement of "this" keyword
-		// TODO: method parameters with default value
-		// TODO: methods implementing an interface
-		// TODO methods mit expression bodies
-		// TODO: Generic methods with constraints
-		// TODO: methods with attributes
+        [Test]
+        public void TestMethodWithReturnType()
+        {
+            TestConversionVisualBasicToCSharp(
+                @"Class TestClass
+    Public Function TestMethod(Of T As {Class, New}, T2 As Structure, T3)(<Out> ByRef argument As T, ByRef argument2 As T2, ByVal argument3 As T3) As Integer
+        Return 0
+    End Function
+End Class", @"class TestClass
+{
+    public System.Int32 TestMethod<T, T2, T3>(out T argument, ref T2 argument2, T3 argument3)
+        where T : class, new()
+        where T2 : struct
+    {
+        return 0;
+    }
+}");
+        }
 	}
 }

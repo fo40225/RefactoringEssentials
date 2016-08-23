@@ -64,37 +64,18 @@ namespace RefactoringEssentials.CSharp.Converter
 				var members = node.Members.Select(m => (MemberDeclarationSyntax)m.Accept(this)).ToList();
 				var id = ConvertIdentifier(node.BlockStatement.Identifier);
 
-
-				//List<InheritsStatementSyntax> inherits = new List<InheritsStatementSyntax>();
-				//List<ImplementsStatementSyntax> implements = new List<ImplementsStatementSyntax>();
 				BaseListSyntax baseList = null;
 				List<TypeParameterConstraintClauseSyntax> constraintClauses = new List<TypeParameterConstraintClauseSyntax>();
-				//ConvertBaseList(node, inherits, implements);
-				//if (node.Modifiers.Any(CS.SyntaxKind.StaticKeyword))
-				//{
-				//	return SyntaxFactory.ModuleBlock(
-				//		SyntaxFactory.ModuleStatement(
-				//			SyntaxFactory.List(node.AttributeLists.Select(a => (AttributeListSyntax)a.Accept(this))),
-				//			ConvertModifiers(node.Modifiers, TokenContext.InterfaceOrModule),
-				//			id, (TypeParameterListSyntax)node.TypeParameterList?.Accept(this)
-				//		),
-				//		SyntaxFactory.List(inherits),
-				//		SyntaxFactory.List(implements),
-				//		SyntaxFactory.List(members)
-				//	);
-				//}
-				//else
-				//{
-				return SyntaxFactory.ClassDeclaration(						
+
+                return SyntaxFactory.ClassDeclaration(
 							SyntaxFactory.List(node.ClassStatement.AttributeLists.Select(a => (AttributeListSyntax)a.Accept(this))),
 							ConvertModifiers(node.ClassStatement.Modifiers),
-							id, 
+							id,
 							(TypeParameterListSyntax)node.ClassStatement.TypeParameterList?.Accept(this),
 							baseList,
 							SyntaxFactory.List(constraintClauses),
-							SyntaxFactory.List(members)						
+							SyntaxFactory.List(members)
 					);
-				//}				
 			}
 			#endregion
 
@@ -130,17 +111,6 @@ namespace RefactoringEssentials.CSharp.Converter
 					body = SyntaxFactory.Block(statements);
 				}
 
-				//if (node.ExpressionBody != null)
-				//{
-				//	block = SyntaxFactory.SingletonList<StatementSyntax>(
-				//		SyntaxFactory.ReturnStatement((ExpressionSyntax)node.ExpressionBody.Expression.Accept(this))
-				//	);
-				//}
-
-				//if (node.SubOrFunctionStatement.Modifiers.Any(m => m.IsKind(CVB.SyntaxKind.ExternKeyword)))
-				//{
-				//	block = SyntaxFactory.List<StatementSyntax>();
-				//}
 				var id = ConvertIdentifier(node.SubOrFunctionStatement.Identifier);
 				var methodInfo = semanticModel.GetDeclaredSymbol(node);
 				var containingType = methodInfo?.ContainingType;
@@ -150,33 +120,34 @@ namespace RefactoringEssentials.CSharp.Converter
 				var contstraintClauses = node.SubOrFunctionStatement.TypeParameterList.Parameters.Select(p => (TypeParameterConstraintClauseSyntax)p.TypeParameterConstraintClause?.Accept(this));
 				contstraintClauses = contstraintClauses.WhereNotNull();
 
-				// extension method?
-				//var extensionAttribute = attributes.FirstOrDefault(a => a.)
-				//if (node.BlockStatement.ParameterList.Parameters.Count > 0 && node.BlockStatement.ParameterList.Parameters[0].Modifiers.Any(CS.SyntaxKind.ThisKeyword))
-				//{
-				//	attributes = attributes.Insert(0, SyntaxFactory.AttributeList(SyntaxFactory.SingletonSeparatedList(SyntaxFactory.Attribute(null, SyntaxFactory.ParseTypeName("Extension"), SyntaxFactory.ArgumentList()))));
-				//	if (!((CS.CSharpSyntaxTree)node.SyntaxTree).HasUsingDirective("System.Runtime.CompilerServices"))
-				//		allImports.Add(SyntaxFactory.ImportsStatement(SyntaxFactory.SingletonSeparatedList<ImportsClauseSyntax>(SyntaxFactory.SimpleImportsClause(SyntaxFactory.ParseName("System.Runtime.CompilerServices")))));
-				//}
+                if (methodInfo?.GetReturnType()?.SpecialType == SpecialType.System_Void)
+                {
+                    return SyntaxFactory.MethodDeclaration(
+                        attributes,
+                        modifiers,
+                        SyntaxFactory.ParseTypeName("void"),
+                        null,
+                        id,
+                        (TypeParameterListSyntax)node.SubOrFunctionStatement.TypeParameterList?.Accept(this),
+                        parameterList,
+                        SyntaxFactory.List(contstraintClauses),
+                        body, null);
+                }
+                else
+                {
+                    TypeSyntax returnType = methodInfo?.GetReturnType().GenerateTypeSyntax();
 
-				//if (containingType?.IsStatic == true)
-				//{
-				//	modifiers = SyntaxFactory.TokenList(modifiers.Where(t => !(t.IsKind(SyntaxKind.SharedKeyword, SyntaxKind.PublicKeyword))));
-				//}
-				TypeSyntax returnType = SyntaxFactory.ParseTypeName("void");
-
-				//if (node.SubOrFunctionStatement )
-				//	returnType = 
-
-				return SyntaxFactory.MethodDeclaration(attributes,
-					modifiers,
-					returnType,
-					null,
-					id,
-					(TypeParameterListSyntax)node.SubOrFunctionStatement.TypeParameterList?.Accept(this),
-					parameterList,
-					SyntaxFactory.List(contstraintClauses),
-					body, null);				
+                    return SyntaxFactory.MethodDeclaration(
+                        attributes,
+                        modifiers,
+                        returnType,
+                        null,
+                        id,
+                        (TypeParameterListSyntax)node.SubOrFunctionStatement.TypeParameterList?.Accept(this),
+                        parameterList,
+                        SyntaxFactory.List(contstraintClauses),
+                        body, null);
+                }
 			}
 
 			public override CSharpSyntaxNode VisitMethodStatement(CVBS.MethodStatementSyntax node)
